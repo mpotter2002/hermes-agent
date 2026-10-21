@@ -458,7 +458,7 @@ class Venv(StatePackage):
 @register
 class Nodejs(_BionicDebArm, BinaryPackage, DebPackage):
     """nodejs.org tarballs for glibc/mac/win, unofficial-builds for musl;
-    the Termux main-repo nodejs .deb for bionic (same major line, termux-built)."""
+    the Termux main-repo nodejs .deb for bionic (termux-built; it lags upstream)."""
 
     name = "node"
     binary_rel = {"win32": "node.exe", "posix": "bin/node"}
@@ -469,11 +469,18 @@ class Nodejs(_BionicDebArm, BinaryPackage, DebPackage):
         return self.main_bin_rel
 
     deb_package = "nodejs"
+    # termux-main builds Node itself and does not publish nodejs.org's
+    # security releases. The pool dropped nodejs_26.4.0-1 (404); this is the
+    # archive it serves. Manual pin, same shape as Python's bionic row:
+    # `pm lock --bump` must not invent a nodejs.org version in the deb name.
+    _BIONIC_URL = (
+        "https://packages.termux.dev/apt/termux-main/pool/main/n/nodejs/"
+        "nodejs_26.4.0-2_aarch64.deb"
+    )
 
     def fetch_url(self, version: str, target: str) -> str:
         if target == "linux-arm64-bionic":
-            # termux's deb carries a -1 revision after the upstream version
-            return f"https://packages.termux.dev/apt/termux-main/pool/main/n/nodejs/nodejs_{version}-1_aarch64.deb"
+            return self._BIONIC_URL
         plat = _NODE_PLAT[target]
         ext = "zip" if target.startswith("win32") else "tar.xz"
         base = (
@@ -484,9 +491,13 @@ class Nodejs(_BionicDebArm, BinaryPackage, DebPackage):
         return f"{base}/v{version}/node-v{version}-{plat}.{ext}"
 
     def latest_versions(self, target: str, locked=None) -> list[str]:
-        # Keep one Node version across targets. If unofficial musl publication
-        # lags nodejs.org, the later artifact pin/download fails before the
-        # lockfile is written rather than selecting glibc bytes on musl.
+        # Empty on bionic: that row is the manual Termux pin above, not a
+        # nodejs.org release. Keep one Node version across the other targets.
+        # If unofficial musl publication lags nodejs.org, the later artifact
+        # pin/download fails before the lockfile is written rather than
+        # selecting glibc bytes on musl.
+        if target == "linux-arm64-bionic":
+            return []
         return node_latest_versions()
 
     def repair_staged_verification(self, entry: Path, target: str, reason: str) -> tuple[str, str]:

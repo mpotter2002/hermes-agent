@@ -11,4 +11,6 @@ def test_node_candidates_exclude_prereleases(monkeypatch):
     ])
     versions = get_package("node").latest_versions("linux-x64")
     assert versions == ["26.7.0", "24.20.0"]
+    # Termux's nodejs deb is a manual pin; it is not a nodejs.org release.
+    assert get_package("node").latest_versions("linux-arm64-bionic") == []
     assert get_package("termux-docker").latest_versions("linux-arm64-bionic") == []
