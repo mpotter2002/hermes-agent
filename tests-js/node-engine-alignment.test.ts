@@ -28,8 +28,8 @@ function nodeRange(manifest: Manifest): string {
 }
 
 test.each([
-  ['22.22.0', true], ['22.23.1', true], ['24.11.0', true], ['24.18.2', true], ['26.0.0', true],
-  ['22.21.1', false], ['23.0.0', false], ['24.0.0', false], ['24.10.9', false], ['25.2.1', false], ['26.0.0-rc.1', false],
+  ['22.23.4', true], ['22.24.0', true], ['24.22.1', true], ['24.23.0', true], ['26.12.1', true], ['26.13.0', true],
+  ['22.23.3', false], ['22.22.0', false], ['23.0.0', false], ['24.22.0', false], ['24.11.0', false], ['25.2.1', false], ['26.12.0', false], ['26.0.0', false], ['26.12.1-rc.1', false],
 ] as const)('workspace Node policy for %s is %s', (version: string, accepted: boolean): void => {
   for (const manifest of [root, desktop]) {
     assert.equal(semver.satisfies(version, nodeRange(manifest)), accepted)
